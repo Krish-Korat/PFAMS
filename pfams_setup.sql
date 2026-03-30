@@ -90,16 +90,16 @@ CREATE TABLE SearchRequest (
 );
 
 INSERT INTO SearchRequest (AccountID, SearchText, SearchDate) VALUES
-(1,'No Helmet','2025-01-01'),
-(2,'Over Speeding','2025-01-02'),
-(3,'Signal Jump','2025-01-03'),
-(4,'Wrong Parking','2025-01-04'),
-(5,'Triple Riding','2025-01-05'),
-(6,'No Seatbelt','2025-01-06'),
-(7,'Expired Insurance','2025-01-07'),
-(8,'Mobile Usage','2025-01-08'),
-(9,'Without License','2025-01-09'),
-(10,'Red Light Jump','2025-01-10');
+(1,'No Helmet','2026-01-01'),
+(2,'Over Speeding','2026-01-02'),
+(3,'Signal Jump','2026-01-03'),
+(4,'Wrong Parking','2026-01-04'),
+(5,'Triple Riding','2026-01-05'),
+(6,'No Seatbelt','2026-01-06'),
+(7,'Expired Insurance','2026-01-07'),
+(8,'Mobile Usage','2026-01-08'),
+(9,'Without License','2026-01-09'),
+(10,'Red Light Jump','2026-01-10');
 
 -- -----------------------------------------
 -- 5. VIOLATION TYPE
@@ -144,16 +144,16 @@ CREATE TABLE Violation (
 );
 
 INSERT INTO Violation (AccountID, ViolationTypeID, VDate, Location) VALUES
-(1,1,'2025-01-01','FC Road'),
-(2,6,'2025-01-02','SIT Campus'),
-(3,7,'2025-01-03','Main Gate'),
-(4,2,'2025-01-04','JM Road'),
-(5,8,'2025-01-05','Accounts Office'),
-(6,9,'2025-01-06','Library'),
-(7,3,'2025-01-07','Shivaji Nagar'),
-(8,10,'2025-01-08','CSE Dept'),
-(9,11,'2025-01-09','Parking Area'),
-(10,12,'2025-01-10','Hostel');
+(1,1,'2026-01-01','FC Road'),
+(2,6,'2026-01-02','SIT Campus'),
+(3,7,'2026-01-03','Main Gate'),
+(4,2,'2026-01-04','JM Road'),
+(5,8,'2026-01-05','Accounts Office'),
+(6,9,'2026-01-06','Library'),
+(7,3,'2026-01-07','Shivaji Nagar'),
+(8,10,'2026-01-08','CSE Dept'),
+(9,11,'2026-01-09','Parking Area'),
+(10,12,'2026-01-10','Hostel');
 
 -- -----------------------------------------
 -- 7. AUTHORITY
@@ -203,17 +203,17 @@ CREATE TABLE Fine (
 
 INSERT INTO Fine (ViolationID, AuthorityID, IssueDate, DueDate, FineAmount, Status) VALUES
 -- Traffic fines
-(1,1,'2025-01-01','2025-01-10',500,'Unpaid'),
-(4,2,'2025-01-04','2025-01-14',1000,'Paid'),
-(7,1,'2025-01-07','2025-01-17',700,'Unpaid'),
+(1,1,'2026-01-01','2026-01-10',500,'Unpaid'),
+(4,2,'2026-01-04','2026-01-14',1000,'Paid'),
+(7,1,'2026-01-07','2026-01-17',700,'Unpaid'),
 -- College fines
-(2,11,'2025-01-02','2025-01-12',600,'Paid'),
-(3,11,'2025-01-03','2025-01-13',800,'Unpaid'),
-(5,15,'2025-01-05','2025-01-15',1200,'Unpaid'),
-(6,13,'2025-01-06','2025-01-16',1500,'Unpaid'),
-(8,11,'2025-01-08','2025-01-18',200,'Paid'),
-(9,16,'2025-01-09','2025-01-19',150,'Unpaid'),
-(10,14,'2025-01-10','2025-01-20',250,'Unpaid');
+(2,11,'2026-01-02','2026-01-12',600,'Paid'),
+(3,11,'2026-01-03','2026-01-13',800,'Unpaid'),
+(5,15,'2026-01-05','2026-01-15',1200,'Unpaid'),
+(6,13,'2026-01-06','2026-01-16',1500,'Unpaid'),
+(8,11,'2026-01-08','2026-01-18',200,'Paid'),
+(9,16,'2026-01-09','2026-01-19',150,'Unpaid'),
+(10,14,'2026-01-10','2026-01-20',250,'Unpaid');
 
 -- Update TotalFine for accounts that have fines
 UPDATE Account SET TotalFine = 500 WHERE AccountID = 1;
@@ -253,9 +253,9 @@ CREATE TABLE Payment (
 );
 
 INSERT INTO Payment (FineID, PaymentDate, PaymentMode, PaymentStatus, AmountPaid) VALUES
-(2,'2025-01-05','UPI','Success',1000),
-(4,'2025-01-06','Card','Success',600),
-(8,'2025-01-09','UPI','Success',200);
+(2,'2026-01-05','UPI','Success',1000),
+(4,'2026-01-06','Card','Success',600),
+(8,'2026-01-09','UPI','Success',200);
 
 -- -----------------------------------------
 -- 11. AUDIT LOG
@@ -365,20 +365,25 @@ CREATE INDEX idx_due_status ON Fine(DueDate, Status);
 
 -- View 1: Show all unpaid fines with user details
 CREATE VIEW PendingFines AS
-SELECT u.FirstName, u.LastName, f.FineID, f.FineAmount, a.AccountID
+SELECT u.FirstName, u.LastName, f.FineID, 
+       (f.FineAmount + IFNULL(IF(f.Status = 'Unpaid' AND CURDATE() > f.DueDate, DATEDIFF(CURDATE(), f.DueDate) * p.PenaltyPerDay, 0), 0)) AS FineAmount, 
+       a.AccountID
 FROM Users u
 JOIN Account a ON u.UserID = a.UserID
 JOIN Violation v ON a.AccountID = v.AccountID
 JOIN Fine f ON v.ViolationID = f.ViolationID
+LEFT JOIN Penalty p ON f.FineID = p.FineID
 WHERE f.Status = 'Unpaid';
 
--- View 2: Total fine aggregated per user
+-- View 2: Total fine aggregated per user (includes dynamic penalty)
 CREATE VIEW TotalFinePerUser AS
-SELECT u.UserID, u.FirstName, u.LastName, SUM(f.FineAmount) AS Total
+SELECT u.UserID, u.FirstName, u.LastName, 
+       SUM(f.FineAmount + IFNULL(IF(f.Status = 'Unpaid' AND CURDATE() > f.DueDate, DATEDIFF(CURDATE(), f.DueDate) * p.PenaltyPerDay, 0), 0)) AS Total
 FROM Users u
 JOIN Account a ON u.UserID = a.UserID
 JOIN Violation v ON a.AccountID = v.AccountID
 JOIN Fine f ON v.ViolationID = f.ViolationID
+LEFT JOIN Penalty p ON f.FineID = p.FineID
 GROUP BY u.UserID, u.FirstName, u.LastName;
 
 -- View 3: Overdue fines with days overdue
@@ -392,12 +397,13 @@ WHERE Status = 'Unpaid';
 -- =========================================
 DELIMITER $$
 
--- Procedure: Calculate total fine for a given account
+-- Procedure: Calculate total fine for a given account (includes dynamic penalty)
 CREATE PROCEDURE GetUserTotalFine(IN acc_id INT)
 BEGIN
-    SELECT SUM(f.FineAmount) AS TotalFine
+    SELECT SUM(f.FineAmount + IFNULL(IF(f.Status = 'Unpaid' AND CURDATE() > f.DueDate, DATEDIFF(CURDATE(), f.DueDate) * p.PenaltyPerDay, 0), 0)) AS TotalFine
     FROM Fine f
     JOIN Violation v ON f.ViolationID = v.ViolationID
+    LEFT JOIN Penalty p ON f.FineID = p.FineID
     WHERE v.AccountID = acc_id;
 END$$
 
