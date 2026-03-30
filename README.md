@@ -1,4 +1,4 @@
-# PFAMS — Penalty / Fine Management System
+# PFAMS — Penalty & Fine Accumulation Management System
 
 A Java desktop application for managing penalties and fines — with both **GUI (Swing)** and **Terminal (CLI)** interfaces. Built using **layered architecture** with **MySQL** as the database.
 
