@@ -71,7 +71,7 @@ Before running the application, you **MUST** configure your database connection 
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/PFAMS.git
+git clone https://github.com/Krish-Korat/PFAMS.git
 cd PFAMS
 ```
 
@@ -191,12 +191,6 @@ Users (1) ──── (1) Account ──── (1) Role
 10. **Payment** — Payment records
 11. **AuditLog** — System activity trail (auto-populated by triggers)
 12. **FineHistory** — Tracks fine amount changes
-
----
-
-## Screenshots
-
-> Run the application in GUI mode to see the Login Screen, User Dashboard, Admin Dashboard, and Authority Dashboard.
 
 ---
 
