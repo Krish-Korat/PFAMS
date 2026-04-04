@@ -188,6 +188,18 @@ public class UserDAO {
         return -1;
     }
 
+    public boolean accountExists(int accountId) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM Account WHERE AccountID = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, accountId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1) > 0;
+            }
+        }
+        return false;
+    }
+
 
     public List<User> getAllUsers() throws SQLException {
         String sql = "SELECT u.*, a.AccountID FROM Users u JOIN Account a ON u.UserID = a.UserID WHERE a.RoleID = 2";

@@ -71,6 +71,10 @@ public class AuthService {
         return userDAO.getAccountIdByUserId(userId);
     }
 
+    public boolean accountExists(int accountId) throws SQLException {
+        return userDAO.accountExists(accountId);
+    }
+
     public List<User> getAllUsers() throws SQLException {
         return userDAO.getAllUsers();
     }

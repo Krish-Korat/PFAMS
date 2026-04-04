@@ -176,6 +176,18 @@ public class LoginScreen extends JFrame {
                 return;
             }
 
+            if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                JOptionPane.showMessageDialog(this,
+                        "Invalid email format.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
+                JOptionPane.showMessageDialog(this,
+                        "Phone number must be exactly 10 digits.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             if (authController.isEmailTaken(email)) {
                 JOptionPane.showMessageDialog(this,
                         "Email '" + email + "' is already registered.", "Error", JOptionPane.ERROR_MESSAGE);

@@ -140,7 +140,7 @@ public class AuthorityDashboard extends JFrame {
                 new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000)));
         JTextField penaltyField = new JTextField("0");
 
-        panel.add(new JLabel("User Email *:")); panel.add(emailField);
+        panel.add(new JLabel("Email or Account ID *:")); panel.add(emailField);
         panel.add(new JLabel("Violation Type *:")); panel.add(typeCombo);
         panel.add(new JLabel("Authority *:")); panel.add(authCombo);
         panel.add(new JLabel("Location:")); panel.add(locationField);
@@ -154,20 +154,30 @@ public class AuthorityDashboard extends JFrame {
         if (result == JOptionPane.OK_OPTION) {
             String email = emailField.getText().trim();
             if (email.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "User email is required.", "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "User email or Account ID is required.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
+            int targetAccountId = -1;
             User user = authController.findUserByEmail(email);
-            if (user == null) {
-                JOptionPane.showMessageDialog(this, "No user found with email: " + email, "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
 
-            int targetAccountId = authController.getAccountId(user.getUserId());
-            if (targetAccountId <= 0) {
-                JOptionPane.showMessageDialog(this, "No account found for this user.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
+            if (user != null) {
+                targetAccountId = authController.getAccountId(user.getUserId());
+                if (targetAccountId <= 0) {
+                    JOptionPane.showMessageDialog(this, "No account found for this user.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else {
+                try {
+                    targetAccountId = Integer.parseInt(email);
+                } catch (NumberFormatException ex) {
+                    JOptionPane.showMessageDialog(this, "Invalid email or Account ID format.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                if (!authController.accountExists(targetAccountId)) {
+                    JOptionPane.showMessageDialog(this, "No account found with ID: " + targetAccountId, "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
 
             int selectedTypeIdx = typeCombo.getSelectedIndex();
@@ -188,9 +198,12 @@ public class AuthorityDashboard extends JFrame {
 
             Date dueDate;
             try {
-                dueDate = new SimpleDateFormat("yyyy-MM-dd").parse(dueDateField.getText().trim());
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+                sdf.setLenient(false);
+                dueDate = sdf.parse(dueDateField.getText().trim());
             } catch (ParseException ex) {
-                dueDate = new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000);
+                JOptionPane.showMessageDialog(this, "Invalid Due Date format. Please use yyyy-MM-dd.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
 
             double penaltyPerDay = 0;

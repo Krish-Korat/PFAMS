@@ -54,6 +54,11 @@ public class AuthController {
         catch (SQLException e) { e.printStackTrace(); return -1; }
     }
 
+    public boolean accountExists(int accountId) {
+        try { return authService.accountExists(accountId); }
+        catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
     public List<User> getAllUsers() {
         try { return authService.getAllUsers(); }
         catch (SQLException e) { e.printStackTrace(); return new java.util.ArrayList<>(); }

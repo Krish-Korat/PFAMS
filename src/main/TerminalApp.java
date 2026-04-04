@@ -105,6 +105,11 @@ public class TerminalApp {
         String email = scanner.nextLine().trim();
         if (email.isEmpty()) { System.out.println(" Email is required."); return; }
 
+        if (!email.matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+            System.out.println("\n [ERROR] Invalid email format.");
+            return;
+        }
+
         if (authController.isEmailTaken(email)) {
             System.out.println("\n [ERROR] Email '" + email + "' is already registered.");
             return;
@@ -112,6 +117,10 @@ public class TerminalApp {
 
         System.out.print(" Phone No   : ");
         String phone = scanner.nextLine().trim();
+        if (!phone.isEmpty() && !phone.matches("^\\d{10}$")) {
+            System.out.println("\n [ERROR] Phone number must be exactly 10 digits.");
+            return;
+        }
         System.out.print(" Address    : ");
         String address = scanner.nextLine().trim();
         System.out.print(" Password   : ");
@@ -518,6 +527,10 @@ public class TerminalApp {
         } else if (userChoice.equals("2")) {
             System.out.print(" Enter Account ID: ");
             targetAccountId = readInt();
+            if (!authController.accountExists(targetAccountId)) {
+                System.out.println(" [ERROR] No account found with ID: " + targetAccountId);
+                return;
+            }
         } else {
             System.out.println(" Invalid choice."); return;
         }
@@ -553,9 +566,15 @@ public class TerminalApp {
         }
         System.out.print(" Due Date (yyyy-MM-dd): ");
         String dueDateStr = scanner.nextLine().trim();
-        Date dueDate;
-        try { dueDate = new SimpleDateFormat("yyyy-MM-dd").parse(dueDateStr); }
-        catch (ParseException e) { dueDate = new Date(System.currentTimeMillis() + 30L * 24 * 60 * 60 * 1000); }
+        Date dueDate = null;
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        sdf.setLenient(false);
+        try { 
+            dueDate = sdf.parse(dueDateStr); 
+        } catch (ParseException e) { 
+            System.out.println(" [ERROR] Invalid Due Date format. Please use yyyy-MM-dd.");
+            return;
+        }
         System.out.print(" Penalty per day for late payment (0 for none): ");
         double penaltyPerDay = 0;
         try { penaltyPerDay = Double.parseDouble(scanner.nextLine().trim()); }
@@ -573,7 +592,7 @@ public class TerminalApp {
             authorityId = readInt();
             if (authorityId <= 0) authorityId = 1;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        
         System.out.println("\n------------------------------------------");
         System.out.println(" CONFIRM FINE DETAILS");
         System.out.println("------------------------------------------");
