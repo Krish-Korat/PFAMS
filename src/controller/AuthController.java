@@ -103,4 +103,9 @@ public class AuthController {
         try { return authService.getAuditSummary(); }
         catch (SQLException e) { e.printStackTrace(); return new java.util.ArrayList<>(); }
     }
+
+    public boolean deleteUser(int userId) {
+        try { return authService.deleteUser(userId); }
+        catch (SQLException e) { e.printStackTrace(); return false; }
+    }
 }

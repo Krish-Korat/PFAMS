@@ -4,6 +4,7 @@ import controller.AuthController;
 import controller.FineController;
 import model.Account;
 import model.Fine;
+import model.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -62,6 +63,10 @@ public class AdminDashboard extends JFrame {
         searchHistBtn.setFont(new Font("SansSerif", Font.PLAIN, 12));
         searchHistBtn.setFocusPainted(false);
 
+        JButton deleteUserBtn = new JButton("Delete User");
+        deleteUserBtn.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        deleteUserBtn.setFocusPainted(false);
+
         JButton logoutButton = new JButton("Logout");
         logoutButton.setFont(new Font("SansSerif", Font.PLAIN, 12));
         logoutButton.setFocusPainted(false);
@@ -70,6 +75,7 @@ public class AdminDashboard extends JFrame {
         headerRight.add(searchBtn);
         headerRight.add(auditBtn);
         headerRight.add(searchHistBtn);
+        headerRight.add(deleteUserBtn);
         headerRight.add(logoutButton);
         headerPanel.add(headerRight, BorderLayout.EAST);
         JPanel summaryPanel = new JPanel(new GridLayout(1, 3, 15, 0));
@@ -120,6 +126,7 @@ public class AdminDashboard extends JFrame {
         searchBtn.addActionListener(e -> showSearchDialog());
         auditBtn.addActionListener(e -> showAuditLogDialog());
         searchHistBtn.addActionListener(e -> showSearchHistoryDialog());
+        deleteUserBtn.addActionListener(e -> showDeleteUserDialog());
     }
 
     private void loadData() {
@@ -216,6 +223,39 @@ public class AdminDashboard extends JFrame {
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(600, 300));
         JOptionPane.showMessageDialog(this, scrollPane, "All Search Requests", JOptionPane.PLAIN_MESSAGE);
+    }
+
+    private void showDeleteUserDialog() {
+        String input = JOptionPane.showInputDialog(this, "Enter User Email or ID to delete:", "Delete User", JOptionPane.WARNING_MESSAGE);
+        if (input != null && !input.trim().isEmpty()) {
+            input = input.trim();
+            User targetUser = null;
+            try {
+                int userId = Integer.parseInt(input);
+                targetUser = authController.getUserDetails(userId);
+            } catch (NumberFormatException e) {
+                targetUser = authController.findUserByEmail(input);
+            }
+            
+            if (targetUser == null) {
+                JOptionPane.showMessageDialog(this, "User not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            int confirm = JOptionPane.showConfirmDialog(this, 
+                "Are you sure you want to delete user: " + targetUser.getFirstName() + " (" + targetUser.getEmail() + ")?\nThis will delete all their fines and history.", 
+                "Confirm Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                
+            if (confirm == JOptionPane.YES_OPTION) {
+                boolean success = authController.deleteUser(targetUser.getUserId());
+                if (success) {
+                    JOptionPane.showMessageDialog(this, "User deleted successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Failed to delete user.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
     }
 
     private JLabel createReportCard(String title, String value, Color color) {

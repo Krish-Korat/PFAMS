@@ -331,7 +331,8 @@ public class TerminalApp {
             System.out.println(" 8. View Audit Log");
             System.out.println(" 9. View All Search Requests");
             System.out.println(" 10. View All Users");
-            System.out.println(" 11. Logout");
+            System.out.println(" 11. Delete User");
+            System.out.println(" 12. Logout");
             System.out.println("==========================================");
             System.out.print(" Enter choice: ");
 
@@ -347,7 +348,8 @@ public class TerminalApp {
                 case "8": viewAuditLog(); break;
                 case "9": viewAllSearchRequests(); break;
                 case "10": viewAllUsers(); break;
-                case "11": logout(); return;
+                case "11": deleteUser(); break;
+                case "12": logout(); return;
                 default: System.out.println(" Invalid choice.");
             }
         }
@@ -651,6 +653,43 @@ public class TerminalApp {
             System.out.printf(" %-6d | %-20s | %-25s | %s%n",
                     u.getUserId(), u.getFullName(), u.getEmail(),
                     u.getPhoneNo() != null ? u.getPhoneNo() : "N/A");
+        }
+    }
+
+    private void deleteUser() {
+        System.out.println("\n------------------------------------------");
+        System.out.println(" DELETE USER");
+        System.out.println("------------------------------------------");
+        System.out.print(" Enter User Email or ID to delete: ");
+        String input = scanner.nextLine().trim();
+        if (input.isEmpty()) return;
+
+        User targetUser = null;
+        try {
+            int userId = Integer.parseInt(input);
+            targetUser = authController.getUserDetails(userId);
+        } catch (NumberFormatException e) {
+            targetUser = authController.findUserByEmail(input);
+        }
+
+        if (targetUser == null) {
+            System.out.println(" [ERROR] User not found.");
+            return;
+        }
+
+        System.out.printf("\n Target: %s (%s)%n", targetUser.getFullName(), targetUser.getEmail());
+        System.out.print(" Are you sure you want to delete this user? All fines and history will be lost. (y/n): ");
+        String confirm = scanner.nextLine().trim();
+
+        if (confirm.equalsIgnoreCase("y") || confirm.equalsIgnoreCase("yes")) {
+            boolean success = authController.deleteUser(targetUser.getUserId());
+            if (success) {
+                System.out.println(" User deleted successfully.");
+            } else {
+                System.out.println(" [ERROR] Failed to delete user.");
+            }
+        } else {
+            System.out.println(" Cancelled.");
         }
     }
 

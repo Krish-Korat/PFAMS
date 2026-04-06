@@ -272,4 +272,82 @@ public class UserDAO {
         account.setTotalFine(rs.getDouble("TotalFine"));
         return account;
     }
+
+    public boolean deleteUser(int userId) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            int accountId = -1;
+            try (PreparedStatement ps = conn.prepareStatement("SELECT AccountID FROM Account WHERE UserID = ?")) {
+                ps.setInt(1, userId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) accountId = rs.getInt("AccountID");
+                }
+            }
+
+            if (accountId != -1) {
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM SearchRequest WHERE AccountID = ?")) {
+                    ps.setInt(1, accountId);
+                    ps.executeUpdate();
+                }
+
+                String getFines = "SELECT FineID FROM Fine WHERE ViolationID IN (SELECT ViolationID FROM Violation WHERE AccountID = ?)";
+                try (PreparedStatement psFines = conn.prepareStatement(getFines)) {
+                    psFines.setInt(1, accountId);
+                    try (ResultSet rsFines = psFines.executeQuery()) {
+                        while (rsFines.next()) {
+                            int fineId = rsFines.getInt("FineID");
+                            
+                            try (PreparedStatement delP = conn.prepareStatement("DELETE FROM Penalty WHERE FineID = ?")) {
+                                delP.setInt(1, fineId);
+                                delP.executeUpdate();
+                            }
+                            try (PreparedStatement delPay = conn.prepareStatement("DELETE FROM Payment WHERE FineID = ?")) {
+                                delPay.setInt(1, fineId);
+                                delPay.executeUpdate();
+                            }
+                            try (PreparedStatement delFH = conn.prepareStatement("DELETE FROM FineHistory WHERE FineID = ?")) {
+                                delFH.setInt(1, fineId);
+                                delFH.executeUpdate();
+                            }
+                        }
+                    }
+                }
+                
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM Fine WHERE ViolationID IN (SELECT ViolationID FROM Violation WHERE AccountID = ?)")) {
+                    ps.setInt(1, accountId);
+                    ps.executeUpdate();
+                }
+
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM Violation WHERE AccountID = ?")) {
+                    ps.setInt(1, accountId);
+                    ps.executeUpdate();
+                }
+                
+                try (PreparedStatement ps = conn.prepareStatement("DELETE FROM Account WHERE AccountID = ?")) {
+                    ps.setInt(1, accountId);
+                    ps.executeUpdate();
+                }
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement("DELETE FROM Users WHERE UserID = ?")) {
+                ps.setInt(1, userId);
+                int rows = ps.executeUpdate();
+                conn.commit();
+                return rows > 0;
+            }
+        } catch (SQLException e) {
+            if (conn != null) conn.rollback();
+            throw e;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                } catch (SQLException e) {}
+                conn.close();
+            }
+        }
+    }
 }

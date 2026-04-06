@@ -112,4 +112,8 @@ public class AuthService {
     public List<Object[]> getAuditSummary() throws SQLException {
         return auditLogDAO.getActionSummary();
     }
+
+    public boolean deleteUser(int userId) throws SQLException {
+        return userDAO.deleteUser(userId);
+    }
 }
